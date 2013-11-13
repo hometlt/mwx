@@ -1,0 +1,276 @@
+#include "dmwreplay.h"
+
+Q_DECLARE_METATYPE(DMWAction);
+Q_DECLARE_METATYPE(DMWRePlay*);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Actions
+QDataStream& operator>>(QDataStream& stream, DMWAction &action)
+{
+     stream>>action.actionButton>>action.elapsedTime>>action.xIndex>>action.yIndex;
+     return stream;
+}
+
+QDataStream& operator<<(QDataStream& stream,const  DMWAction &action)
+{
+    stream<<action.actionButton<<action.elapsedTime<<action.xIndex<<action.yIndex;
+
+    return stream;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Replays
+QDataStream& operator>>(QDataStream& stream, DMWRePlay *replay)
+{
+     int actionsCount;
+     stream>>replay->gaPlayerName
+           >>replay->gaWidth
+           >>replay->gaHeight
+           >>replay->gaMines
+           >>replay->gaScheme
+           >>replay->gaGameType
+           >>replay->gaTime
+           >>actionsCount;
+
+     replay->gaMines=0;
+
+     for (int i=0; i<actionsCount; i++ )
+     {
+         DMWAction pNewAct;
+         stream>>pNewAct;
+         replay->actions.push_back(pNewAct);
+     }
+     return stream;
+}
+
+QDataStream& operator<<(QDataStream& stream,const DMWRePlay *replay)
+{
+    stream<<replay->gaPlayerName
+          <<replay->gaWidth
+          <<replay->gaHeight
+          <<replay->gaMines
+          <<replay->gaScheme
+          <<replay->gaGameType
+          <<replay->gaTime/1000+1
+          <<replay->actions.count();
+
+    foreach (DMWAction it,replay->actions){stream<<it;}
+
+    return stream;
+}
+
+
+QScriptValue constructDMWRePlay(QScriptContext *context, QScriptEngine *engine)
+{
+    QVariant v;
+
+    //int x = qobject_cast<QIODevice*>(context->argument(0).toQObject());
+    int w= context->argument(0).toInt32();
+    int h=  context->argument(1).toInt32();
+    int m=  context->argument(2).toInt32();
+    QString s=  context->argument(3).toString();
+    int t=  context->argument(4).toInt32();
+
+    // Create the C++ object
+    DMWRePlay* rep=new DMWRePlay(w,h,m,s,t);
+
+   v.setValue(rep);
+    //store the shared pointer in the script object that we are constructing
+    return engine->newVariant(context->thisObject(), v);
+   // return engine->newQObject(context->thisObject(),rep);
+}
+
+
+QScriptValue DMWRePlay_w(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->width();}
+QScriptValue DMWRePlay_h(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->height();}
+QScriptValue DMWRePlay_m(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->mines();}
+QScriptValue DMWRePlay_s(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->scheme();}
+QScriptValue DMWRePlay_g(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->gameType();}
+QScriptValue DMWRePlay_t(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->time();}
+QScriptValue DMWRePlay_p(QScriptContext *context, QScriptEngine *){
+    DMWRePlay* object = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());return object->playerName();}
+
+
+QScriptValue DMWRePlay_setW(QScriptContext *context, QScriptEngine *engine)
+{
+    DMWRePlay* rep = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());
+    if(!rep)return context->throwError(QScriptContext::TypeError,"DMWRePlay.prototype.setW: this object is not a DMWRePlay*");
+       rep->setWidth(context->argument(0).toNumber());
+    return engine->undefinedValue();
+}
+
+QScriptValue DMWRePlay_setH(QScriptContext *context, QScriptEngine *engine)
+{
+    DMWRePlay* rep = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());
+    if(!rep)return context->throwError(QScriptContext::TypeError,"DMWRePlay.prototype.setH: this object is not a DMWRePlay*");
+       rep->setHeight(context->argument(0).toNumber());
+    return engine->undefinedValue();
+}
+
+QScriptValue DMWRePlay_setS(QScriptContext *context, QScriptEngine *engine)
+{
+    DMWRePlay* rep = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());
+    if(!rep)return context->throwError(QScriptContext::TypeError,"DMWRePlay.prototype.setS: this object is not a DMWRePlay*");
+       rep->setScheme(context->argument(0).toString());
+    return engine->undefinedValue();
+}
+
+QScriptValue DMWRePlay_setP(QScriptContext *context, QScriptEngine *engine)
+{
+    DMWRePlay* rep = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());
+    if(!rep)return context->throwError(QScriptContext::TypeError,"DMWRePlay.prototype.setP: this object is not a DMWRePlay*");
+       rep->setPlayerName(context->argument(0).toString());
+    return engine->undefinedValue();
+}
+
+QScriptValue DMWRePlay_addAction(QScriptContext *context, QScriptEngine *engine)
+{
+    DMWRePlay* rep = qvariant_cast<DMWRePlay*>(context->thisObject().toVariant());
+    DMWAction object = qvariant_cast<DMWAction>(context->argument(0).toVariant());
+    if(!rep)return context->throwError(QScriptContext::TypeError,"DMWRePlay.prototype.addAction: this object is not a DMWRePlay*");
+       rep->addAction(object);
+    return engine->undefinedValue();
+}
+
+
+QScriptValue constructDMWAction(QScriptContext *context, QScriptEngine *engine)
+{
+    QVariant v;
+
+    //int x = qobject_cast<QIODevice*>(context->argument(0).toQObject());
+    int x= context->argument(0).toInt32();
+    int y=  context->argument(1).toInt32();
+    int b=  context->argument(2).toInt32();
+    int e=  context->argument(3).toInt32();
+
+    // Create the C++ object
+    DMWAction act(x,y,b,e);
+
+    v.setValue(act);
+
+    // store the shared pointer in the script object that we are constructing
+   return engine->newVariant(context->thisObject(), v);
+}
+
+
+QScriptValue DMWAction_x(QScriptContext *context, QScriptEngine *)
+{
+    DMWAction object = qvariant_cast<DMWAction>(context->thisObject().toVariant());
+    return object.xIndex;
+}
+
+
+QScriptValue DMWAction_e(QScriptContext *context, QScriptEngine *)
+{
+    DMWAction object = qvariant_cast<DMWAction>(context->thisObject().toVariant());
+    return object.elapsedTime;
+}
+
+
+QScriptValue DMWAction_y(QScriptContext *context, QScriptEngine *)
+{
+    DMWAction object = qvariant_cast<DMWAction>(context->thisObject().toVariant());
+    return object.yIndex;
+}
+
+QScriptValue DMWAction_b(QScriptContext *context, QScriptEngine *)
+{
+    DMWAction object = qvariant_cast<DMWAction>(context->thisObject().toVariant());
+    return object.actionButton;
+}
+
+
+template <typename Tp>
+QScriptValue qScriptValueFrom(QScriptEngine *engine, Tp const &object)
+{
+    QVariant v;v.setValue(object);
+    return engine->newVariant(v);
+}
+
+template <typename Tp>
+void qScriptValueTo(const QScriptValue &value, Tp &object)
+{
+    object = qvariant_cast<Tp>(value.toVariant());
+}
+
+template <typename Tp>
+        int qScriptRegisterObjectMetaType(QScriptEngine *engine,const QScriptValue &prototype = QScriptValue())
+        {
+    return qScriptRegisterMetaType<Tp>(engine, qScriptValueFrom, qScriptValueTo, prototype);
+}
+
+
+
+
+template <typename Tp>
+QScriptValue qScriptValueFromQObject(QScriptEngine *engine, Tp const &qobject)
+{
+    return engine->newQObject(qobject);
+}
+
+template <typename Tp>
+void qScriptValueToQObject(const QScriptValue &value, Tp &qobject)
+{
+    qobject = qobject_cast<Tp>(value.toQObject());
+}
+
+template <typename Tp>
+int qScriptRegisterQObjectMetaType( QScriptEngine *engine,const QScriptValue &prototype = QScriptValue())
+{
+    return qScriptRegisterMetaType<Tp>(engine, qScriptValueFromQObject,qScriptValueToQObject, prototype);
+}
+
+
+void registerDMWRePlay(QScriptEngine *engine)
+{
+    QScriptValue DMWRePlayProto = engine->newObject();
+    DMWRePlayProto.setProperty("w", engine->newFunction(DMWRePlay_w));
+    DMWRePlayProto.setProperty("h", engine->newFunction(DMWRePlay_h));
+    DMWRePlayProto.setProperty("m", engine->newFunction(DMWRePlay_m));
+    DMWRePlayProto.setProperty("g", engine->newFunction(DMWRePlay_g));
+    DMWRePlayProto.setProperty("s", engine->newFunction(DMWRePlay_s));
+    DMWRePlayProto.setProperty("t", engine->newFunction(DMWRePlay_t));
+    DMWRePlayProto.setProperty("p", engine->newFunction(DMWRePlay_p));
+    DMWRePlayProto.setProperty("setW", engine->newFunction(DMWRePlay_setW));
+    DMWRePlayProto.setProperty("setH", engine->newFunction(DMWRePlay_setH));
+    DMWRePlayProto.setProperty("setP", engine->newFunction(DMWRePlay_setP));
+    DMWRePlayProto.setProperty("setS", engine->newFunction(DMWRePlay_setS));
+    DMWRePlayProto.setProperty("addAction", engine->newFunction(DMWRePlay_addAction));
+
+    QScriptValue DMWRePlayCtor = engine->newFunction(constructDMWRePlay, DMWRePlayProto);
+    engine->globalObject().setProperty("DMWReplay", DMWRePlayCtor);
+    qScriptRegisterObjectMetaType<DMWRePlay*>(engine,DMWRePlayProto);
+
+   /* /// !!! надо сделать чтобы мрожно было взаимодействовать со слотами используя DMWReplay
+    QScriptValue DMWRePlayCtor = engine->newFunction(constructDMWRePlay);
+    engine->globalObject().setProperty("DMWReplay", DMWRePlayCtor);
+    qScriptRegisterQObjectMetaType<DMWRePlay*>(engine);*/
+}
+
+
+
+void registerDMWAction(QScriptEngine *engine)
+{
+    QScriptValue DMWActionProto = engine->newObject();
+    DMWActionProto.setProperty("x", engine->newFunction(DMWAction_x));
+    DMWActionProto.setProperty("y", engine->newFunction(DMWAction_y));
+    DMWActionProto.setProperty("b", engine->newFunction(DMWAction_b));
+    DMWActionProto.setProperty("e", engine->newFunction(DMWAction_e));
+    // DMWActionProto.setProperty("setb", engine.newFunction(DMWAction_prototype_setB));
+
+    QScriptValue DMWActionCtor = engine->newFunction(constructDMWAction, DMWActionProto);
+    engine->globalObject().setProperty("DMWAction", DMWActionCtor);
+
+    qScriptRegisterObjectMetaType<DMWAction>(engine,DMWActionProto);
+}
